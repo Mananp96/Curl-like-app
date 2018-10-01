@@ -1,4 +1,8 @@
 
+/**
+ * @author Manan
+ * @version 1.0
+ */
 public class HttpStatusCode {
 	
 	/**
