@@ -15,10 +15,20 @@ public class MainClient {
 	static String query;
 	static String protocol;
 	static int port;
-	public static void main(String[] args) throws URISyntaxException, InterruptedException {
+	
+	public static void resetData() {
+		
+		MainClient.host = new String();
+		MainClient.path = new String();
+		MainClient.query = new String();
+		MainClient.protocol = new String();
+		MainClient.port =-1;
+	}
+	public static void main(String[] args) throws URISyntaxException, InterruptedException, UnknownHostException {
 		
 		while(true) {
-		String url = null;	
+		String url = new String();	
+		resetData();
 		System.out.print(">>");
 		ArrayList<String> listsym = new ArrayList<>();
 		
@@ -49,7 +59,7 @@ public class MainClient {
 				if(linearray[i].startsWith("-f")) {
 					listsym.add("-f,"+linearray[++i]);
 				}
-				if(linearray[i].startsWith("http://")) {
+				if( (linearray[i].startsWith("http://")) || (linearray[i].startsWith("https://")) ) {
 					url = linearray[i];
 				}
 			}
@@ -61,7 +71,13 @@ public class MainClient {
 				path = uri.getRawPath();
 				query = uri.getRawQuery();
 				protocol = uri.getScheme();
+				System.out.println("--"+uri);
+				System.out.println("--"+host);
+				System.out.println("--"+path);
+				System.out.println("--"+query);
+				System.out.println("--"+protocol);
 				port = uri.getPort();
+				System.out.println("--"+port);
 				
 				if(path == null || path.length() == 0) {
 					path = "";
@@ -88,11 +104,7 @@ public class MainClient {
 			if( (requestCommand.equals("get")) || (requestCommand.equals("post")) || (requestCommand.equals("help")) ){
 				
 				if(requestCommand.equals("get")) {
-					try {
-						client.get(host, port, path, url, listsym);
-					}catch(Exception e) {
-						System.out.println("Invalid Host");
-					}
+					client.get(host, port, path, url, listsym);
 				}
 				
 				if(requestCommand.equals("post")) {

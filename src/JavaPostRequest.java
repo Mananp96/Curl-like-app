@@ -15,9 +15,9 @@ public class JavaPostRequest {
     public static void main(String[] args) throws MalformedURLException,
             ProtocolException, IOException {
 
-        String url = "https://httpbin.org/post";
-        String urlParameters = "name=Jack&occupation=programmer";
-       byte[] postData = urlParameters.getBytes(StandardCharsets.UTF_8);
+        String url = "https://www.twitter.com";
+        //String urlParameters = "name=Jack&occupation=programmer";
+      // byte[] postData = urlParameters.getBytes(StandardCharsets.UTF_8);
 
         try {
 
@@ -25,13 +25,13 @@ public class JavaPostRequest {
             con = (HttpURLConnection) myurl.openConnection();
 
             con.setDoOutput(true);
-            con.setRequestMethod("POST");
+            //con.setRequestMethod("POST");
             con.setRequestProperty("User-Agent", "Java client");
             con.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
 
-            try (DataOutputStream wr = new DataOutputStream(con.getOutputStream())) {
-                wr.write(postData);
-            }
+//            try (DataOutputStream wr = new DataOutputStream(con.getOutputStream())) {
+//                wr.write(postData);
+//            }
 
             StringBuilder content;
 
@@ -46,8 +46,9 @@ public class JavaPostRequest {
                     content.append(System.lineSeparator());
                 }
             }
-
+            
             System.out.println(content.toString());
+           // String[] devider = content.(System.lineSeparator(),"\r\n");
 
         } finally {
             

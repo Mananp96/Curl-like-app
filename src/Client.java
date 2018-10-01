@@ -7,17 +7,20 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
+import java.net.HttpURLConnection;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.net.UnknownHostException;
 
 import java.util.ArrayList;
 
 
-public class Client {
+public class Client extends HttpStatusCode {
 	
 	private Socket socket;
 	int count = 0; //for seperate Header and Body part of Response, if 1 then seperate
@@ -27,14 +30,20 @@ public class Client {
 	String httpInlineData = null;
 	String fileData = new String();
 	String Filename= null;
-	
+	int statusCode;
+	String Location; 
+	boolean redirect = false;
 	String[] headers;
 	String[] messagebody;
+	
+//	String headers;
+//	String messagebody;
 	
 	PrintWriter request;
 	BufferedWriter wr;
 	
 	ArrayList<String> listsym = new ArrayList<>();
+	
 	
 	
 	public Client(String line) {
@@ -43,7 +52,7 @@ public class Client {
 	
 	//httpc GET Request
 	public void get(String host, int port, String path, String url, ArrayList<String> listsym1) {
-		
+		System.out.println("path"+path);
 		try {
 			socket = new Socket(host, port);
 		} catch (Exception e) {
@@ -57,9 +66,16 @@ public class Client {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		request.println("GET "+path+" HTTP/1.1"); // "+path+"
+		if(path.length() == 0) {
+			request.println("GET / HTTP/1.1"); 
+		}
+		else {
+			request.println("GET "+path+" HTTP/1.1");
+		}
+		
 		request.println("Host:"+ host);
 		listsym = listsym1;
+		
 		
 		//for -h key:value
 		if(!listsym.isEmpty()) {
@@ -82,6 +98,8 @@ public class Client {
 			e.printStackTrace();
 		}
 		request.close();
+		this.checkForRedirection();
+
 	}
 		
 	//httpc POST Request	
@@ -144,8 +162,114 @@ public class Client {
 		wr.write(fileData);}
 		wr.flush();
 		Read(listsym);
+//		this.checkForRedirection();
 		wr.close();
 		
+	}
+	
+	//redirection condition check
+	public void checkForRedirection() {
+		//code for redirect
+				
+				if (statusCode != HttpURLConnection.HTTP_OK) {
+					if (statusCode == HttpURLConnection.HTTP_MOVED_TEMP
+						|| statusCode == HttpURLConnection.HTTP_MOVED_PERM
+							|| statusCode == HttpURLConnection.HTTP_SEE_OTHER)
+					redirect = true;
+				}
+				
+				try {
+					Thread.sleep(1000);
+				} catch (InterruptedException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+				
+				if(redirect) {
+					try {
+						this.redirect(Location);
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				
+				}
+				//end of redirect
+	}
+	
+	//Redirect
+	public void redirect(String newUrl) throws UnknownHostException, IOException {
+		String newURL = newUrl;
+		System.out.println("");
+		System.out.println("Response Code ... " + statusCode);
+		
+		try {
+			Thread.sleep(1000);
+		} catch (InterruptedException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		
+		System.out.println("Redirecting to ...."+newURL);
+		
+		try {
+			Thread.sleep(2000);
+		} catch (InterruptedException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		System.out.println("");
+		
+		URI uri = null;
+		try {
+			uri = new URI(newURL);
+		} catch (URISyntaxException e) {
+			e.printStackTrace();
+		}
+		String Host = uri.getHost();
+		String Path = uri.getRawPath();
+		String query = uri.getRawQuery();
+		String protocol = uri.getScheme();
+		int Port = uri.getPort();
+		System.out.println("--"+Host);
+		System.out.println("--"+Port);
+		
+		if(Path == null || Path.length() == 0) {
+			Path = "";
+		}
+		if(query == null || query.length() ==0) {
+			query = "";
+		}
+		if(query.length() > 0 || Path.length() > 0) {
+			Path = Path+"?"+query;	
+		}
+		
+		if(Port == -1) {
+			if(protocol.equals("http")) {
+				Port = 80;
+			}
+			if(protocol.equals("https")) {
+				Port = 443;
+			}
+			
+		}
+	
+		socket = new Socket(Host,Port);
+		request = new PrintWriter(socket.getOutputStream());
+		
+		if(Path.length() == 0) {
+			request.println("GET / HTTP/1.1"); 
+		}
+		else {
+			request.println("GET "+Path+" HTTP/1.1");
+		} 
+		request.println("Host:"+ Host);
+		//request.println("Content-Type: application");
+		request.println("");
+		request.flush();
+		this.Read(listsym);
+		request.close();
+		System.out.println("Done");
 	}
 	
 	//Parse the Response from Server and Print the Final Output according to -v, -h, --d, -f
@@ -181,18 +305,29 @@ public class Client {
 		headers = contentdevide[0].split("\\^");
 		messagebody = contentdevide[1].split("\\^");
 		
+		//code for redirect
+		statusCode = Integer.parseInt(headers[0].substring(9, 12));
+		for(int k =0; k<headers.length; k++) {
+			
+			if(headers[k].startsWith("Location:")) {
+				Location = headers[k].substring(10);
+			}
+		}
+		//end of code for redirect
+		
 		//For Verbose
 		if(listsym.contains("-v")) {	
 			//headers	
 			for(int i =0; i<headers.length; i++) {
 				System.out.println(headers[i]);
+
 			}
 			
 		}
 		System.out.println("");
-		for(int k =0; k<messagebody.length; k++) {
-			System.out.println(messagebody[k]);
-		}
+		for(int m =0; m<messagebody.length; m++) {
+			System.out.println(messagebody[m]);
+		} 
 		
 		if(!listsym.isEmpty()) {
 			for(int j=0; j<listsym.size();j++) {
@@ -206,6 +341,52 @@ public class Client {
 		
 		
 	}
+//	
+//public void ReadV2(ArrayList<String> listsym) throws IOException {
+//		
+//		BufferedReader br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+//		String outputmsg;
+//		StringBuilder content = new StringBuilder();
+//		long start = System.currentTimeMillis();
+//		long end = start + 10*1000;
+//		do {
+//			outputmsg = br.readLine();
+//			System.out.println(outputmsg);
+//			content.append(outputmsg);
+//			
+//		}while((outputmsg!=null)&&!(outputmsg.endsWith("}")||outputmsg.endsWith("</html>")||outputmsg.endsWith("/get")||outputmsg.endsWith("post")));
+//		
+//		br.close();
+//	
+//		//System.out.println(content);
+//		
+//		String[] contentdevide = content.toString().split("\\r\\n");
+//		System.out.println(contentdevide);
+//		headers = contentdevide[0];
+//		System.out.println("---"+headers);
+//		messagebody = contentdevide[1];
+//		
+//		
+//		//For Verbose
+//		if(listsym.contains("-v")) {	
+//			//headers	
+//			System.out.println(headers);
+//		}
+//		System.out.println("");
+//		System.out.println(messagebody);
+//		
+//		if(!listsym.isEmpty()) {
+//			for(int j=0; j<listsym.size();j++) {
+//				if(listsym.get(j).startsWith("-o")) {
+//					Filename = listsym.get(j).substring(3);
+//				//	this.writeToFile();
+//				}
+//			}
+//		}
+//		
+//		
+//		
+//	}
 	
 	//Write to file
 	public void writeToFile() {
