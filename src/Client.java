@@ -95,7 +95,7 @@ public class Client extends HttpStatusCode {
 			e.printStackTrace();
 		}
 		request.close();
-		this.checkForRedirection();
+		this.checkForRedirection("getRedirect");
 
 	}
 
@@ -109,21 +109,15 @@ public class Client extends HttpStatusCode {
 		// this method will block no more than timeout ms.
 		int timeoutInMs = 10 * 1000; // 10 seconds
 		socket.connect(socketaddress, timeoutInMs);
-
-		// to encode parms
-		//	    String params1 = URLEncoder.encode("param1", "UTF-8")
-		//					+ ":" + URLEncoder.encode("value1", "UTF-8");
-		//					            params += "&" + URLEncoder.encode("param2", "UTF-8")
-		//					+ "=" + URLEncoder.encode("value2", "UTF-8");
-		//	   
+   
 		wr = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(), "UTF8"));
 		listsym = listsym1;
-
-		wr.write("POST " + path + " HTTP/1.1\r\n");
+		if (path.length() == 0) {
+			wr.write("POST / HTTP/1.1\r\n");
+		} else {
+			wr.write("POST " + path + " HTTP/1.1\r\n");
+		}
 		wr.write("Host:" + host + "\r\n");
-		// wr.write("Content-Length:"+ fileData.length() + "\r\n");
-		// wr.write("Content-Type: application/json");
-		// wr.write("Accept: application/txt");
 
 		if (!listsym.isEmpty()) {
 			for (int i = 0; i < listsym.size(); i++) {
@@ -162,13 +156,14 @@ public class Client extends HttpStatusCode {
 		}
 		wr.flush();
 		Read(listsym);
-		//		this.checkForRedirection();
+		
 		wr.close();
+		this.checkForRedirection("postRedirect");
 
 	}
 
 	// redirection condition check
-	public void checkForRedirection() {
+	public void checkForRedirection(String requestRedirect) {
 		// code for redirect
 
 		if (statusCode != HttpURLConnection.HTTP_OK) {
@@ -186,7 +181,7 @@ public class Client extends HttpStatusCode {
 
 		if (redirect) {
 			try {
-				this.redirect(Location);
+				this.redirect(Location,requestRedirect);
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -197,7 +192,8 @@ public class Client extends HttpStatusCode {
 	}
 
 	// Redirect
-	public void redirect(String newUrl) throws UnknownHostException, IOException {
+	public void redirect(String newUrl, String requestRedirect) throws UnknownHostException, IOException {
+		
 		String newURL = newUrl;
 		System.out.println("");
 		System.out.println("Response Code ... " + statusCode);
@@ -252,15 +248,27 @@ public class Client extends HttpStatusCode {
 			}
 
 		}
-
+		
+		
 		socket = new Socket(Host, Port);
 		request = new PrintWriter(socket.getOutputStream());
-
-		if (Path.length() == 0) {
-			request.println("GET / HTTP/1.1");
-		} else {
-			request.println("GET " + Path + " HTTP/1.1");
+		
+		if(requestRedirect.equals("getRedirect")){
+			if (Path.length() == 0) {
+				request.println("GET / HTTP/1.1");
+			} else {
+				request.println("GET " + Path + " HTTP/1.1");
+			}
+		}else {
+			if(requestRedirect.equals("postRedirect")) {
+				if (Path.length() == 0) {
+					request.println("POST / HTTP/1.1");
+				} else {
+					request.println("POST " + Path + " HTTP/1.1");
+				}
+			}
 		}
+		
 		request.println("Host:" + Host);
 		// request.println("Content-Type: application");
 		request.println("");
@@ -278,8 +286,7 @@ public class Client extends HttpStatusCode {
 		BufferedReader br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 		String outputmsg;
 		StringBuilder content = new StringBuilder();
-		long start = System.currentTimeMillis();
-		long end = start + 10 * 1000;
+	
 		do {
 			outputmsg = br.readLine();
 			// System.out.println(outputmsg);
@@ -322,12 +329,17 @@ public class Client extends HttpStatusCode {
 				System.out.println(headers[i]);
 
 			}
-
+			System.out.println("");
+			for (int m = 0; m < messagebody.length; m++) {
+				System.out.println(messagebody[m]);
+			}
+		}else {
+			for (int m = 0; m < messagebody.length; m++) {
+				System.out.println(messagebody[m]);
+			}
 		}
-		System.out.println("");
-		for (int m = 0; m < messagebody.length; m++) {
-			System.out.println(messagebody[m]);
-		}
+		
+		
 
 		if (!listsym.isEmpty()) {
 			for (int j = 0; j < listsym.size(); j++) {
@@ -339,52 +351,6 @@ public class Client extends HttpStatusCode {
 		}
 
 	}
-	//	
-	//public void ReadV2(ArrayList<String> listsym) throws IOException {
-	//		
-	//		BufferedReader br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-	//		String outputmsg;
-	//		StringBuilder content = new StringBuilder();
-	//		long start = System.currentTimeMillis();
-	//		long end = start + 10*1000;
-	//		do {
-	//			outputmsg = br.readLine();
-	//			System.out.println(outputmsg);
-	//			content.append(outputmsg);
-	//			
-	//		}while((outputmsg!=null)&&!(outputmsg.endsWith("}")||outputmsg.endsWith("</html>")||outputmsg.endsWith("/get")||outputmsg.endsWith("post")));
-	//		
-	//		br.close();
-	//	
-	//		//System.out.println(content);
-	//		
-	//		String[] contentdevide = content.toString().split("\\r\\n");
-	//		System.out.println(contentdevide);
-	//		headers = contentdevide[0];
-	//		System.out.println("---"+headers);
-	//		messagebody = contentdevide[1];
-	//		
-	//		
-	//		//For Verbose
-	//		if(listsym.contains("-v")) {	
-	//			//headers	
-	//			System.out.println(headers);
-	//		}
-	//		System.out.println("");
-	//		System.out.println(messagebody);
-	//		
-	//		if(!listsym.isEmpty()) {
-	//			for(int j=0; j<listsym.size();j++) {
-	//				if(listsym.get(j).startsWith("-o")) {
-	//					Filename = listsym.get(j).substring(3);
-	//				//	this.writeToFile();
-	//				}
-	//			}
-	//		}
-	//		
-	//		
-	//		
-	//	}
 
 	// Write to file
 	public void writeToFile() {
