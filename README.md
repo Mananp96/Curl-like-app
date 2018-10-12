@@ -28,18 +28,19 @@ The commands are:
 
 ```
 httpc help get
-httpc get [-v] [-h key:value] URL
+httpc get [-v] [-h key:value] URL [-o file]
 ```
 
 - Get executes a HTTP GET request for a given URL.
 - -v Prints the detail of the response such as protocol, status, and headers.
 - -h key:value Associates headers to HTTP Request with the format 'key:value'.
+- -o file write the RESPONSE to specified file.
 
 ### Post Usage
 
 ```
 httpc help post
-httpc post [-v] [-h key:value] [-d inline-data] [-f file] URL
+httpc post [-v] [-h key:value] [-d inline-data] [-f file] URL [-o file]
 ```
 
 Post executes a HTTP POST request for a given URL with inline data or from file.
@@ -48,5 +49,6 @@ Post executes a HTTP POST request for a given URL with inline data or from file.
 - -h key:value Associates headers to HTTP Request with the format 'key:value'.
 - -d string Associates an inline data to the body HTTP POST request.
 - -f file Associates the content of a file to the body HTTP POST request.
+- -o file write the RESPONSE to specified file.
 
 Either [-d] or [-f] can be used but not both.
