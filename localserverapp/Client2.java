@@ -55,7 +55,7 @@ public class Client2 {
 	
 	
 	public static void main(String args[]) {
-		Client2 client2 = new Client2("127.0.0.1", 5555);
+		Client2 client2 = new Client2("127.0.0.1",8080);
 	}
 	
 }
