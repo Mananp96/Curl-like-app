@@ -2,6 +2,7 @@ import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.net.Socket;
 
 /**
@@ -13,7 +14,7 @@ public class Client2 {
 	
 	private Socket socket;
 	private BufferedReader userInput;
-	private DataOutputStream out;
+	private PrintWriter out;
 	
 	public Client2(String address, int port ) {
 		
@@ -25,9 +26,10 @@ public class Client2 {
 			userInput = new BufferedReader(new InputStreamReader(System.in));
 			String userCommand = userInput.readLine();
 			
-			out= new DataOutputStream(socket.getOutputStream());
-			out.writeUTF(userCommand);
-			
+			out= new PrintWriter(socket.getOutputStream());
+			out.println(userCommand);
+			out.println("\r\n");
+			out.flush();
 			this.printOutput();
 			userInput.close();
 			out.close();

@@ -1,6 +1,5 @@
-import java.io.BufferedInputStream;
+
 import java.io.BufferedReader;
-import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
@@ -28,8 +27,9 @@ public class httpfs {
 	
 	private ServerSocket serverSocket = null;
 	private Socket socket = null;
-	private DataInputStream in = null; // input stream to get request from Client
+	private BufferedReader in = null; // input stream to get request from Client
 	private PrintWriter out = null; // output stream send response to client
+	private String request;
 
 	/**
 	 * Constructor of Server class used to:<br>
@@ -50,17 +50,22 @@ public class httpfs {
 			System.out.println("Client connection established....");
 
 			//get the data from client
-			in = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
+			in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 			out = new PrintWriter(socket.getOutputStream());
-			clientRequest = in.readUTF();
+			clientRequest = in.readLine();
 			System.out.println(clientRequest);
 
 			if(clientRequest.startsWith("GET")) {
 				this.getServerRequest(clientRequest.substring(4));
 			}else if(clientRequest.startsWith("POST")) {
-				this.postServerRequest(clientRequest.substring(5));
+				String[] command = clientRequest.substring(5).split(" ");
+				String fileName = command[0];
+				String content = new String();
+				for(int i=1;i<command.length;i++) {
+					content = content+" "+ command[i];
+				}
+				this.postServerRequest(fileName, content);
 			}
-
 			out.println("");
 			out.flush();
 			socket.close();
@@ -127,16 +132,17 @@ public class httpfs {
 	 * options for the POST such as overwrite=true|false.
 	 * 
 	 * @param fileName name of file. 
+	 * @param content 
 	 */
-	public void postServerRequest(String fileName) {
+	public void postServerRequest(String fileName, String content) {
 		File filePath = new File(pathToDir+fileName);		
 		PrintWriter fileWriter;
 		try {
 			fileWriter = new PrintWriter(pathToDir+fileName);
-			fileWriter.println("data changed");
+			fileWriter.println(content);
 			fileWriter.close();
 		} catch (FileNotFoundException e) {
-			out.print("manan");
+			out.print("ERROR 404");
 		}
 	}
 
@@ -155,8 +161,6 @@ public class httpfs {
 				isPort = true;
 				port = Integer.parseInt(commands[++i]);
 				System.out.println(port);
-			}else {
-				port = 8080;
 			}
 			if(commands[i].equals("-d")) {
 				isPathToDir = true;
