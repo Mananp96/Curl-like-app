@@ -4,13 +4,16 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.Socket;
 
-
+/**
+ * Client class
+ * @author Manan
+ *
+ */
 public class Client2 {
 	
 	private Socket socket;
 	private BufferedReader userInput;
 	private DataOutputStream out;
-	
 	
 	public Client2(String address, int port ) {
 		
@@ -24,6 +27,11 @@ public class Client2 {
 			
 			out= new DataOutputStream(socket.getOutputStream());
 			out.writeUTF(userCommand);
+			
+			this.printOutput();
+			userInput.close();
+			out.close();
+			socket.close();
 			
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -45,24 +53,9 @@ public class Client2 {
 		
 	}
 	
-	public void close() {
-		//close the connection
-		try 
-		{
-			userInput.close();
-			out.close();
-			socket.close();
-		}catch(IOException i) {
-			System.out.println(i);
-		}
-	}
-	
 	
 	public static void main(String args[]) {
 		Client2 client2 = new Client2("127.0.0.1", 5555);
-		client2.printOutput();
-		client2.close();
-		
 	}
 	
 }

@@ -1,6 +1,9 @@
 import java.io.BufferedInputStream;
+import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
@@ -42,26 +45,15 @@ public class httpfs {
 			
 			//get the data from client
 			in = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
+			out = new PrintWriter(socket.getOutputStream());
 			clientRequest = in.readUTF();
 			System.out.println(clientRequest);
 			
-			
-			
-			out = new PrintWriter(socket.getOutputStream());
-			
-			File[] listOfFiles = new File(defaultDirectory).listFiles();
-			//new File("./"+your_file);
-			for(File file : listOfFiles) {
-				if(file.isFile()) {
-					System.out.println("File      >> "+file.getName());
-					out.println(file.getName());
-				}else if(file.isDirectory()) {
-					System.out.println("Directory >> "+file.getName());
-					out.println(file.getName());
-				}
+			if(clientRequest.startsWith("GET")) {
+				this.getServerRequest(clientRequest.substring(4));
+			}else if(clientRequest.startsWith("POST")) {
+				this.postServerRequest(clientRequest.substring(5));
 			}
-			
-			
 			
 			out.println("");
 			out.flush();
@@ -78,17 +70,55 @@ public class httpfs {
 	 * "GET /" returns a list of the current files in the data directory.<br>
 	 * "GET /foo" returns the content of the file named foo in the data directory.<br>
 	 * 
+	 * @param fileName name of file.
+	 * 
 	 */
-	public void getServerRequest() {
+	public void getServerRequest(String fileName) {
+		
+		File filePath = new File(defaultDirectory+fileName);
+		if(filePath.isDirectory()) {	
+			File[] listOfFiles = filePath.listFiles();
+			for(File file : listOfFiles) {
+				if(file.isFile()) {
+					System.out.println("File      >> "+file.getName());
+					out.println(file.getName());
+				}else if(file.isDirectory()) {
+					System.out.println("Directory >> "+file.getName());
+					out.println(file.getName());
+				}
+			}
+		}else if(filePath.isFile()) {
+			System.out.println("path: "+defaultDirectory+fileName);
+			FileReader fileReader;
+			try {
+				fileReader = new FileReader(defaultDirectory+fileName);
+				BufferedReader bufferedReader = new BufferedReader(fileReader);
+				String currentLine;
+				String fileData = null;
+				while ((currentLine = bufferedReader.readLine()) != null) {
+					fileData = fileData + currentLine;
+					out.println(currentLine);
+				}
+			} catch (FileNotFoundException e) {
+				System.out.println("ERROR HTTP 404");
+				out.println("ERROR HTTP 404");
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		
+		}
 		
 	}
+	
 	
 	/**
 	 * "POST /bar" should create or overwrite the file named bar in the data directory<br>
 	 * with the content of the body of the request.<br>
 	 * options for the POST such as overwrite=true|false.
+	 * 
+	 * @param fileName name of file. 
 	 */
-	public void postServerRequest() {
+	public void postServerRequest(String fileName) {
 		
 	}
 	
