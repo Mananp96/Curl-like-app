@@ -55,6 +55,7 @@ public class httpfs {
 
 			//get the data from client
 			in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+			//output stream
 			out = new PrintWriter(socket.getOutputStream());
 			while((request = in.readLine())!=null) {
 				
@@ -71,12 +72,18 @@ public class httpfs {
 			
 				if(isHttpcClient) {
 					System.out.println(request);
-					if(request.matches("(.*):(.*)")){
+					if(request.matches("(.*):(.*)")&&count==0){
 						String[] headers = request.split(":");
 						httpfsModel.addHeaders(headers[0], headers[1]);
 					}
 				}
 				if(request.isEmpty())
+					count++;
+				if(count==1) {
+					String data = request;
+					httpfsModel.setContent(data);
+				}
+				if(count==2)
 					break;
 			}
 			
@@ -119,7 +126,7 @@ public class httpfs {
 	 * handles httpc Client.
 	 */
 	public void httpcRequest() {
-		httpcRequest = httpcRequest.replace("GET /", "").replace("HTTP/1.1", "");
+		httpcRequest = httpcRequest.replace("GET /", "").replace("POST /", "").replace("HTTP/1.1", "");
 		httpfsModel.setStatus("200");
 		httpfsModel.setUrl("http://localhost:"+port+"/"+httpcRequest);
 		out.println(httpfsModel.getHeaderPart());
@@ -143,6 +150,19 @@ public class httpfs {
 			
 		}else if(httpcRequest.startsWith("post?")) {
 			System.out.println("httpc POST request...");
+			httpcRequest = httpcRequest.replace("post?", "");
+			if(!httpcRequest.isEmpty() && httpcRequest.matches("(.*)=(.*)")) {
+				if(httpcRequest.matches("(.*)&(.*)")) {
+					String[] temp = httpcRequest.split("&");
+					for(int i = 0;i<temp.length;i++) {
+						String[] args = temp[i].split("=");
+						httpfsModel.setArgs(args[0], args[1]);
+					}
+				}else {
+					String[] args = httpcRequest.split("=");
+					httpfsModel.setArgs(args[0], args[1]);
+				}
+			}
 			out.println(httpfsModel.getPOSTBodyPart());
 		}
 		
@@ -165,7 +185,6 @@ public class httpfs {
 				for(File file : listOfFiles) {
 					if(file.isFile()) {
 						System.out.println("File      >> "+file.getName());
-						httpfsModel.setFiles(file.getName());
 						out.println("File      >> "+file.getName());
 					}else if(file.isDirectory()) {
 						System.out.println("Directory >> "+file.getName());
@@ -196,10 +215,6 @@ public class httpfs {
 			System.out.println("ERROR HTTP 404");
 			out.println("ERROR HTTP 404");
 		}
-		httpfsModel.setStatus("200");
-		httpfsModel.setUrl("\"http://localhost:"+port+"/"+clientRequest+"\"");
-		out.println(httpfsModel.getHeaderPart());
-		out.println(httpfsModel.getPOSTBodyPart());
 	}
 
 	/**

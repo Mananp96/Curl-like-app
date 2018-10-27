@@ -10,7 +10,7 @@ public class httpfsModel {
 	HashMap<String, String> args;
 	ArrayList<String> fileList;
 	String status;
-	String content;
+	String content = "";
 	String origin = "127.0.0.1"; 
 	String Url;
 	String space = " ";
@@ -31,7 +31,7 @@ public class httpfsModel {
 	public String getHeaders() {
 		String head = "";
 		for(Entry<String, String> entry : headers.entrySet()) {
-			head += entry.getKey()+": "+entry.getValue()+"\r\n";
+			head += " "+entry.getKey()+": "+entry.getValue()+"\r\n";
 		}
 		return head;
 	}
@@ -62,7 +62,7 @@ public class httpfsModel {
 	public String getArgs() {
 		String head = "\r\n";
 		for(Entry<String, String> entry : args.entrySet()) {
-			head += "\""+entry.getKey()+"\": \""+entry.getValue()+"\",\r\n";
+			head += " \""+entry.getKey()+"\": \""+entry.getValue()+"\",\r\n";
 		}
 		return head;
 	}
@@ -118,14 +118,14 @@ public class httpfsModel {
 	public String getPOSTBodyPart() {
 		return 
 				"{\r\n"+space+
-				"\"args\":{\r\n"+space+
+				"\"args\":{"+space+
 				this.getArgs()+"},\r\n"+space+
-				"\"data\":{\r\n"+space+
+				"\"data\":{"+space+
 				this.getContent()+"},\r\n"+space+
 				"\"files\":{\r\n"+space+
 				this.getFiles()+"},\r\n"+space+
-				"\"headers\":{\r\n"+space+
-				this.getHeaders()+"},\r\n"+space+
+				"\"headers\":{\r\n"+
+				this.getHeaders()+" },\r\n"+space+
 				"\"origin\": "+this.getOrigin()+",\r\n"+space+
 				"\"url\": "+this.getUrl()+",\r\n"+
 				"}";
