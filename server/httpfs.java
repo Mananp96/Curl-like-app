@@ -1,4 +1,3 @@
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -30,6 +29,7 @@ public class httpfs {
 	private BufferedReader in = null; // input stream to get request from Client
 	private PrintWriter out = null; // output stream send response to client
 	private String request;
+	httpfsModel httpfsModel;
 
 	/**
 	 * Constructor of Server class used to:<br>
@@ -42,18 +42,21 @@ public class httpfs {
 	public httpfs(int port) {
 		try
 		{
+			httpfsModel = new httpfsModel();
 			serverSocket = new ServerSocket(port);
-			System.out.println("Server started....");
-			System.out.println("Waiting for connection");
+			System.out.println("Server started at port:"+port+"...");
+			System.out.println("Waiting for connection...");
 
 			socket = serverSocket.accept();
-			System.out.println("Client connection established....");
+			System.out.println("Client "+socket.getInetAddress()+" connection established...");
 
 			//get the data from client
 			in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 			out = new PrintWriter(socket.getOutputStream());
+			
+			
 			clientRequest = in.readLine();
-			System.out.println(clientRequest);
+			System.out.println("Client requested command..."+clientRequest);
 
 			if(clientRequest.startsWith("GET")) {
 				this.getServerRequest(clientRequest.substring(4));
@@ -68,8 +71,9 @@ public class httpfs {
 			}
 			out.println("");
 			out.flush();
-			socket.close();
 			in.close();
+			socket.close();
+			
 
 		}catch (IOException e) {
 			e.printStackTrace();
@@ -93,10 +97,11 @@ public class httpfs {
 				for(File file : listOfFiles) {
 					if(file.isFile()) {
 						System.out.println("File      >> "+file.getName());
-						out.println(file.getName());
+						httpfsModel.setFiles(file.getName());
+						out.println("File      >> "+file.getName());
 					}else if(file.isDirectory()) {
 						System.out.println("Directory >> "+file.getName());
-						out.println(file.getName());
+						out.println("Directory >> "+file.getName());
 					}
 				}
 			}else if(filePath.isFile()) {
@@ -113,7 +118,7 @@ public class httpfs {
 					}
 				} catch (FileNotFoundException e) {
 					System.out.println("ERROR HTTP 404");
-					out.println("ERROR HTTP 404");
+					out.println("ERROR HTTP 404 : File Not Found");
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
@@ -122,9 +127,12 @@ public class httpfs {
 		} else {
 			System.out.println("ERROR HTTP 404");
 			out.println("ERROR HTTP 404");
-		}	
+		}
+		httpfsModel.setStatus("200");
+		httpfsModel.setUrl("\"http://localhost:"+port+"/"+clientRequest+"\"");
+		out.println(httpfsModel.getHeaderPart());
+		out.println(httpfsModel.getPOSTBodyPart());
 	}
-
 
 	/**
 	 * "POST /bar" should create or overwrite the file named bar in the data directory<br>

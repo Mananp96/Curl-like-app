@@ -1,3 +1,4 @@
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map.Entry;
@@ -17,6 +18,9 @@ public class httpfsModel {
 		this.headers = new HashMap<>();
 		this.args = new HashMap<>();
 		this.fileList = new ArrayList<>();
+		headers.put("Connection: ", "keep-alive");
+		Instant instant = Instant.now();
+		headers.put("Date: ", instant.toString());
 	}
 	
 	public void addHeaders(String key, String value) {
