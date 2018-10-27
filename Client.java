@@ -396,4 +396,3 @@ public class Client {
 				+ "Use \"httpc help [command]\" for more information about a command.");
 	}
 }
-
