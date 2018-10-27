@@ -13,14 +13,15 @@ public class httpfsModel {
 	String content;
 	String origin = "127.0.0.1"; 
 	String Url;
+	String space = " ";
 	
 	public httpfsModel(){
 		this.headers = new HashMap<>();
 		this.args = new HashMap<>();
 		this.fileList = new ArrayList<>();
-		headers.put("Connection: ", "keep-alive");
+		headers.put("Connection", "keep-alive");
 		Instant instant = Instant.now();
-		headers.put("Date: ", instant.toString());
+		headers.put("Date", instant.toString());
 	}
 	
 	public void addHeaders(String key, String value) {
@@ -28,7 +29,7 @@ public class httpfsModel {
 	}
 	
 	public String getHeaders() {
-		String head = "\r\n";
+		String head = "";
 		for(Entry<String, String> entry : headers.entrySet()) {
 			head += entry.getKey()+": "+entry.getValue()+"\r\n";
 		}
@@ -61,7 +62,7 @@ public class httpfsModel {
 	public String getArgs() {
 		String head = "\r\n";
 		for(Entry<String, String> entry : args.entrySet()) {
-			head += entry.getKey()+": "+entry.getValue()+",\r\n";
+			head += "\""+entry.getKey()+"\": \""+entry.getValue()+"\",\r\n";
 		}
 		return head;
 	}
@@ -99,33 +100,33 @@ public class httpfsModel {
 	}
 	
 	public String getHeaderPart() {
-		return "HTTP/1.0 " + this.getStatus() + " " + this.getState() + this.getHeaders() + "\r\n";
+		return "HTTP/1.0 " + this.getStatus() + " " + this.getState() +"\r\n"+ this.getHeaders();
 	}
 	
 	public String getGETBodyPart() {
 		return 
 				"{\r\n"+
-				"\"args\":{\r\n"+
+				" \"args\":{"+
 				this.getArgs()+"},\r\n"+
-				"\"headers\":{\r\n"+
+				" \"headers\":{\r\n"+
 				this.getHeaders()+"},\r\n"+
-				"\"origin\": "+this.getOrigin()+",\r\n"+
-				"\"url\": "+this.getUrl()+",\r\n"+
+				" \"origin\": "+this.getOrigin()+",\r\n"+
+				" \"url\": "+this.getUrl()+",\r\n"+
 				"}";
 	}
 	
 	public String getPOSTBodyPart() {
 		return 
-				"{\r\n"+
-				"\"args\":{\r\n"+
-				this.getArgs()+"},\r\n"+
-				"\"data\":{\r\n"+
-				this.getContent()+"},\r\n"+
-				"\"files\":{\r\n"+
-				this.getFiles()+"},\r\n"+
-				"\"headers\":{\r\n"+
-				this.getHeaders()+"},\r\n"+
-				"\"origin\": "+this.getOrigin()+",\r\n"+
+				"{\r\n"+space+
+				"\"args\":{\r\n"+space+
+				this.getArgs()+"},\r\n"+space+
+				"\"data\":{\r\n"+space+
+				this.getContent()+"},\r\n"+space+
+				"\"files\":{\r\n"+space+
+				this.getFiles()+"},\r\n"+space+
+				"\"headers\":{\r\n"+space+
+				this.getHeaders()+"},\r\n"+space+
+				"\"origin\": "+this.getOrigin()+",\r\n"+space+
 				"\"url\": "+this.getUrl()+",\r\n"+
 				"}";
 	}

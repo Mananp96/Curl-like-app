@@ -18,11 +18,14 @@ public class httpfs {
 	static boolean isPort = false;
 	static boolean isVerbose = false;
 	static boolean isPathToDir = false;
-	
+	boolean isHttpcClient = false;
+	boolean isHttpfsClient = false;
+	int count = 0;
 	static int port;
 	private static String pathToDir;
 	String crlf = "\r\n";
 	String clientRequest; // client input
+	String httpcRequest;
 	
 	private ServerSocket serverSocket = null;
 	private Socket socket = null;
@@ -53,21 +56,52 @@ public class httpfs {
 			//get the data from client
 			in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 			out = new PrintWriter(socket.getOutputStream());
-			
-			
-			clientRequest = in.readLine();
-			System.out.println("Client requested command..."+clientRequest);
-
-			if(clientRequest.startsWith("GET")) {
-				this.getServerRequest(clientRequest.substring(4));
-			}else if(clientRequest.startsWith("POST")) {
-				String[] command = clientRequest.substring(5).split(" ");
-				String fileName = command[0];
-				String content = new String();
-				for(int i=1;i<command.length;i++) {
-					content = content+" "+ command[i];
+			while((request = in.readLine())!=null) {
+				
+				if(request.endsWith("HTTP/1.1")) {
+					httpcRequest = request;
+					isHttpcClient = true;
 				}
-				this.postServerRequest(fileName, content);
+				else if(request.matches("(GET|POST)/(.*)")) {
+						isHttpfsClient = true;
+						clientRequest = request;
+						System.out.println("----");
+						break;
+				}		
+			
+				if(isHttpcClient) {
+					System.out.println(request);
+					if(request.matches("(.*):(.*)")){
+						String[] headers = request.split(":");
+						httpfsModel.addHeaders(headers[0], headers[1]);
+					}
+				}
+				if(request.isEmpty())
+					break;
+			}
+			
+			if(isHttpcClient) {
+				if(httpcRequest.matches("(GET|POST) /(.*)")) {
+					System.out.println("====");
+					this.httpcRequest();
+				}
+			}
+			
+			System.out.println("-=----------");
+			if(isHttpfsClient) {
+				System.out.println("Client requested command..."+clientRequest);
+	
+				if(clientRequest.startsWith("GET")) {
+					this.getServerRequest(clientRequest.substring(4));
+				}else if(clientRequest.startsWith("POST")) {
+					String[] command = clientRequest.substring(5).split(" ");
+					String fileName = command[0];
+					String content = new String();
+					for(int i=1;i<command.length;i++) {
+						content = content+" "+ command[i];
+					}
+					this.postServerRequest(fileName, content);
+				}
 			}
 			out.println("");
 			out.flush();
@@ -80,7 +114,41 @@ public class httpfs {
 		}
 
 	}
-
+	
+	/**
+	 * handles httpc Client.
+	 */
+	public void httpcRequest() {
+		httpcRequest = httpcRequest.replace("GET /", "").replace("HTTP/1.1", "");
+		httpfsModel.setStatus("200");
+		httpfsModel.setUrl("http://localhost:"+port+"/"+httpcRequest);
+		out.println(httpfsModel.getHeaderPart());
+		
+		if(httpcRequest.startsWith("get?")) {
+			System.out.println("httpc GET request...");
+			//args
+			httpcRequest = httpcRequest.replace("get?", "");
+			if(httpcRequest.matches("(.*)&(.*)")) {
+				String[] temp = httpcRequest.split("&");
+				for(int i = 0;i<temp.length;i++) {
+					String[] args = temp[i].split("=");
+					httpfsModel.setArgs(args[0], args[1]);
+				}
+			}else {
+				String[] args = httpcRequest.split("=");
+				httpfsModel.setArgs(args[0], args[1]);
+			}
+			System.out.println(httpfsModel.getGETBodyPart());
+			out.println(httpfsModel.getGETBodyPart());
+			
+		}else if(httpcRequest.startsWith("post?")) {
+			System.out.println("httpc POST request...");
+			out.println(httpfsModel.getPOSTBodyPart());
+		}
+		
+	}
+	
+	
 	/**
 	 * "GET /" returns a list of the current files in the data directory.<br>
 	 * "GET /foo" returns the content of the file named foo in the data directory.<br>
@@ -90,7 +158,7 @@ public class httpfs {
 	 */
 	public void getServerRequest(String fileName) {
 
-		File filePath = new File(pathToDir+fileName);
+		File filePath = new File(pathToDir+"/"+fileName);
 		if(filePath.exists()) {
 			if(filePath.isDirectory()) {	
 				File[] listOfFiles = filePath.listFiles();
@@ -105,10 +173,10 @@ public class httpfs {
 					}
 				}
 			}else if(filePath.isFile()) {
-				System.out.println("path: "+pathToDir+fileName);
+				System.out.println("path: "+pathToDir+"/"+fileName);
 				FileReader fileReader;
 				try {
-					fileReader = new FileReader(pathToDir+fileName);
+					fileReader = new FileReader(filePath);
 					BufferedReader bufferedReader = new BufferedReader(fileReader);
 					String currentLine;
 					String fileData = null;
