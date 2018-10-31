@@ -6,6 +6,7 @@ import java.io.PrintWriter;
 import java.net.Socket;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 
 /**
  * Client class
@@ -14,26 +15,23 @@ import java.net.URISyntaxException;
  */
 public class Client2 {
 	
+	static boolean isHeader = false;
 	private Socket socket;
 	private BufferedReader userInput;
 	private PrintWriter out;
 	static String URL;
 	int port;
 	static String query;
+	static ArrayList<String> headers = new ArrayList<>();
 	
-	public Client2(String host, int port, String query ) {
+	public Client2(String host, int port, String query,ArrayList<String> headers) {
 		
 		try 
-		{
+		{	
+			this.query = query;
+			this.headers = headers;
 			socket = new Socket(host, port);
 			System.out.println("connected...");
-			out= new PrintWriter(socket.getOutputStream());
-			out.println(query);
-			out.println("\r\n");
-			out.flush();
-			this.printOutput();
-			out.close();
-			socket.close();
 			
 		} catch (IOException e) {
 			System.out.println("");
@@ -41,6 +39,24 @@ public class Client2 {
 		}
 	}	
 		
+	
+	
+	public void sendRequest() throws IOException {
+		out= new PrintWriter(socket.getOutputStream());
+		out.println(query);
+		
+		if(isHeader) {
+			for(int i = 0 ; i<headers.size();i++) {
+				out.println(headers.get(i));
+			}
+		}
+		
+		out.println("\r\n");
+		out.flush();
+		this.printOutput();
+		out.close();
+		socket.close();
+	}
 
 	public void printOutput() {
 		try {
@@ -64,8 +80,10 @@ public class Client2 {
 		String[] commandClient = httpfsClient.split(" ");
 		if(commandClient[0].equals("httpfs")) {
 			for(int i =0; i<commandClient.length; i++) {
-				if(commandClient[i].startsWith("-h")) {
-					String httpfsHeader = commandClient[++i];
+				if(commandClient[i].equals("-h")) {
+					isHeader = true;
+//					System.out.println(commandClient[++i]);
+					headers.add(commandClient[++i]);
 				}
 				if(commandClient[i].startsWith("http://")){
 					URL = commandClient[i];
@@ -77,7 +95,8 @@ public class Client2 {
 		int port = uri.getPort();
 		query = uri.getPath();
 		System.out.println(query.substring(1));
-		Client2 client2 = new Client2(host,port,query.substring(1));
+		Client2 client2 = new Client2(host,port,query.substring(1),headers);
+		client2.sendRequest();
 	}
 	
 }
